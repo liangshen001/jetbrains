@@ -8,26 +8,29 @@ import {promisify} from "util";
 export type JetbrainsApp = 'WebStorm' | 'IntelliJIdea' | 'DataGrip' | 'PyCharm';
 
 export class Jetbrains {
-    optionsPath: string;
-    constructor(private app: JetbrainsApp) {
+
+    optionsPath(app: JetbrainsApp) {
         const preferencesBasePath = `${os.homedir()}/Library/Application Support/JetBrains/`;
         const folders = fs.readdirSync(preferencesBasePath);
-        const appDir = folders.filter(name => name.startsWith(this.app)).reduce((p, v) => (p && p > v) ? p : v, '')
+        const appDir = folders.filter(name => name.startsWith(app)).reduce((p, v) => (p && p > v) ? p : v, '')
         if (!appDir) {
             throw new Error('Not Found Application');
         }
-        this.optionsPath = path.join(preferencesBasePath, appDir, 'options');
+        return path.join(preferencesBasePath, appDir, 'options');
     }
 
-    private getOptionsFileObjSync(fileName: string) {
-        const recentPreferences = fs.readFileSync(path.join(this.optionsPath, fileName), {encoding: 'utf8'});
-        const recentPreferencesObj = xml2js(recentPreferences) as Element;
-        return this.resolveElement(recentPreferencesObj);
+    private getOptionsFileObjSync(app: JetbrainsApp, fileName: string) {
+        const recentPreferences = fs.readFileSync(path.join(this.optionsPath(app), fileName), {encoding: 'utf8'});
+        return this.resolveFileContent(recentPreferences);
     }
-    private async getOptionsFileObj(fileName: string) {
+    private async getOptionsFileObj(app: JetbrainsApp, fileName: string) {
         let readFile = promisify(fs.readFile);
-        const recentPreferences = await readFile(path.join(this.optionsPath, fileName), {encoding: 'utf8'});
-        const recentPreferencesObj = xml2js(recentPreferences) as Element;
+        const recentPreferences = await readFile(path.join(this.optionsPath(app), fileName), {encoding: 'utf8'});
+        return this.resolveFileContent(recentPreferences);
+    }
+
+    private resolveFileContent(file: string) {
+        const recentPreferencesObj = xml2js(file) as Element;
         return this.resolveElement(recentPreferencesObj);
     }
 
@@ -67,14 +70,14 @@ export class Jetbrains {
         }
     }
 
-    getRecentProjectsManagerSync(): RecentProjectsManager {
-        return this.getOptionsFileObjSync('recentProjects.xml')
+    getRecentProjectsManagerSync(app: JetbrainsApp): RecentProjectsManager {
+        return this.getOptionsFileObjSync(app, 'recentProjects.xml')
     }
-    async getRecentProjectsManager(): Promise<RecentProjectsManager> {
-        return this.getOptionsFileObj('recentProjects.xml')
+    async getRecentProjectsManager(app: JetbrainsApp): Promise<RecentProjectsManager> {
+        return this.getOptionsFileObj(app, 'recentProjects.xml')
     }
 }
 
-
-export default Jetbrains;
+let jetbrains = new Jetbrains();
+export default jetbrains;
 export {RecentProjectsManager};
