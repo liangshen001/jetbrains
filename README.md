@@ -14,8 +14,9 @@ npm i @liangshen/jetbrains
 以WebStorm为例
 
 ```typescript
-import {getRecentProjects} from "@liangshen/jetbrains"
-const recentProjects = await getRecentProjects('WebStorm');
+import jetbrains from "@liangshen/jetbrains"
+// const recentProjectsManager = await jetbrains.getRecentProjectsManager('WebStorm')
+const recentProjectsManager = jetbrains.getRecentProjectsManagerSync('WebStorm')
 
-console.log(recentProjects);
+console.log(recentProjectsManager);
 ```
